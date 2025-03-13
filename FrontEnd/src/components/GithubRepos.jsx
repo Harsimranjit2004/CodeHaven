@@ -1,59 +1,63 @@
-// src/GitHubRepos.jsx
 import React, { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
 
 const GitHubRepos = () => {
-  const { user, isLoaded } = useUser();
+  const { user } = useUser();
   const [repos, setRepos] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
- console.log(user)
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
   useEffect(() => {
-    if (!isLoaded || !user) return;
+    if (!user) return;
 
     const fetchRepos = async () => {
-      setLoading(true);
       try {
-        // Call the backend endpoint with the user's Clerk ID
-        const response = await fetch(`http://localhost:3000/api/github/repos?userId=${user.id}`);
-        console(response)
+        // Use the Vite environment variable if defined, otherwise fallback to localhost:3000
+        const backendUrl =
+          import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+        const response = await fetch(
+          `${backendUrl}/get_repos?userId=${user.id}`
+        );
         if (!response.ok) {
-          throw new Error("Failed to fetch repositories");
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        setRepos(data);
+        if (data.error) {
+          setError(data.error);
+        } else {
+          setRepos(data.repos);
+        }
       } catch (err) {
-        setError(err.message);
+        console.error("Failed to fetch repositories:", err);
+        setError("Failed to fetch repositories.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchRepos();
-  }, [user, isLoaded]);
+  }, [user]);
 
-  if (!isLoaded) return <div>Loading user data...</div>;
-  if (loading) return <div>Fetching repositories...</div>;
-  if (error) return <div>Error: {error}</div>;
+  if (loading) return <p>Loading repositories...</p>;
+  if (error) return <p>Error: {error}</p>;
 
   return (
-    <div>
-      <h1>Your GitHub Repositories</h1>
-      {repos.length > 0 ? (
-        <ul>
+    <div className="min-h-screen bg-gray-900 text-white p-6">
+      <h2 className="text-3xl font-bold mb-4">Your GitHub Repositories</h2>
+      {repos.length === 0 ? (
+        <p>No repositories found.</p>
+      ) : (
+        <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {repos.map((repo) => (
-            <li key={repo.id}>
-              <a href={repo.html_url} target="_blank" rel="noopener noreferrer">
-                {repo.name}
+            <li key={repo.id} className="bg-gray-800 p-4 rounded shadow hover:shadow-lg transition-shadow">
+              <a href={repo.html_url} target="_blank" rel="noopener noreferrer" className="text-xl font-semibold hover:underline">
+                {repo.name} {repo.private && "(Private)"}
               </a>
             </li>
           ))}
         </ul>
-      ) : (
-        <p>No repositories found.</p>
       )}
     </div>
   );
-};
-
+}
 export default GitHubRepos;

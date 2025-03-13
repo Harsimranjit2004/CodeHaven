@@ -7,9 +7,9 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(),tailwindcss()],
   server: {
-    allowedHosts: ['5c72-142-204-17-55.ngrok-free.app'], // ✅ Allow Ngrok
-    host: '0.0.0.0', // ✅ Allow external access
-    port: 5173, // Set your Vite port
+    allowedHosts: true
+    // You can also allow all hosts by setting allowedHosts: true,
+    // but it's more secure to specify the allowed hosts explicitly.
   }
   
 })
