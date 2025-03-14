@@ -56,202 +56,203 @@ async function cleanupTempDir(projectPath: any) {
   }
 }
 // deploy-service.js (Updated dockerizeProject function)
+// deploy-service.js (Updated dockerizeProject function)
 async function dockerizeProject(projectId: any, framework: any) {
-    const projectPath = path.join(__dirname, `output/${projectId}`);
-    const dockerfilePath = path.join(projectPath, "Dockerfile");
-    const imageName = `${DOCKER_USERNAME}/${projectId}:latest`;
-  
-    // Create .dockerignore to optimize build
-    const dockerIgnorePath = path.join(projectPath, ".dockerignore");
-    const dockerIgnoreContent = `
-      node_modules
-      .git
-      *.md
-      *.log
-    `;
-    await fs.writeFile(dockerIgnorePath, dockerIgnoreContent);
-    console.log(`Created .dockerignore for project ${projectId}`);
-  
-    let dockerfileContent = "";
-    switch (framework.toLowerCase()) {
-      case "next.js":
-      case "react":
-        dockerfileContent = `
-          FROM node:16
-          WORKDIR /app
-          COPY . /app
-          RUN npm install
-          RUN npm run build
-          CMD ["npx", "serve", "-s", "build", "-l", "8080"]
-          EXPOSE 8080
-        `;
-        break;
-      case "node.js":
-        dockerfileContent = `
-          FROM node:16
-          WORKDIR /app
-          COPY . /app
-          RUN npm install
-          CMD ["node", "server.js"]
-          EXPOSE 8080
-        `;
-        break;
-      case "vue":
-        dockerfileContent = `
-          FROM node:16
-          WORKDIR /app
-          COPY . /app
-          RUN npm install
-          RUN npm run build
-          CMD ["npx", "serve", "-s", "dist", "-l", "8080"]
-          EXPOSE 8080
-        `;
-        break;
-      case "static":
-        dockerfileContent = `
-          FROM nginx:alpine
-          COPY . /app
-          EXPOSE 80
-        `;
-        break;
-      default:
-        dockerfileContent = `
-          FROM node:16
-          WORKDIR /app
-          COPY . /app
-          RUN npm install
-          RUN npm run build
-          CMD ["npx", "serve", "-s", "build", "-l", "8080"]
-          EXPOSE 8080
-        `;
-    }
-  
-    await fs.writeFile(dockerfilePath, dockerfileContent);
-    console.log(`Created Dockerfile for project ${projectId}`);
-  
-    const { spawn } = require("child_process");
-  
-    return new Promise((resolve, reject) => {
-      // Programmatic Docker login with increased timeout and debugging
-      console.log(`Attempting to log into Docker registry ${DOCKER_REGISTRY}...`);
-      const login = spawn("docker", ["login", "-u", DOCKER_USERNAME, "--password-stdin", DOCKER_REGISTRY], {
-        stdio: ["pipe", "pipe", "pipe"],
+  const projectPath = path.join(__dirname, `output/${projectId}`);
+  const dockerfilePath = path.join(projectPath, "Dockerfile");
+  const imageName = `${DOCKER_USERNAME}/${projectId}:latest`;
+
+  // Create .dockerignore to optimize build
+  const dockerIgnorePath = path.join(projectPath, ".dockerignore");
+  const dockerIgnoreContent = `
+    node_modules
+    .git
+    *.md
+    *.log
+  `;
+  await fs.writeFile(dockerIgnorePath, dockerIgnoreContent);
+  console.log(`Created .dockerignore for project ${projectId}`);
+
+  let dockerfileContent = "";
+  switch (framework.toLowerCase()) {
+    case "next.js":
+    case "react":
+      dockerfileContent = `
+        FROM node:16.20
+        WORKDIR /app
+        COPY . /app
+        RUN npm install
+        RUN npm run build -- --debug
+        CMD ["npx", "serve", "-s", "build", "-l", "8080"]
+        EXPOSE 8080
+      `;
+      break;
+    case "node.js":
+      dockerfileContent = `
+        FROM node:16.20
+        WORKDIR /app
+        COPY . /app
+        RUN npm install
+        CMD ["node", "server.js"]
+        EXPOSE 8080
+      `;
+      break;
+    case "vue":
+      dockerfileContent = `
+        FROM node:16.20
+        WORKDIR /app
+        COPY . /app
+        RUN npm install
+        RUN npm run build
+        CMD ["npx", "serve", "-s", "dist", "-l", "8080"]
+        EXPOSE 8080
+      `;
+      break;
+    case "static":
+      dockerfileContent = `
+        FROM nginx:alpine
+        COPY . /app
+        EXPOSE 80
+      `;
+      break;
+    default:
+      dockerfileContent = `
+        FROM node:16.20
+        WORKDIR /app
+        COPY . /app
+        RUN npm install
+        RUN npm run build
+        CMD ["npx", "serve", "-s", "build", "-l", "8080"]
+        EXPOSE 8080
+      `;
+  }
+
+  await fs.writeFile(dockerfilePath, dockerfileContent);
+  console.log(`Created Dockerfile for project ${projectId}`);
+
+  // Ensure Docker daemon is running before proceeding
+
+
+  const { spawn } = require("child_process");
+
+  return new Promise((resolve, reject) => {
+    // Programmatic Docker login with increased timeout and debugging
+    console.log(`Attempting to log into Docker registry ${DOCKER_REGISTRY}...`);
+    const login = spawn("docker", ["login", "-u", DOCKER_USERNAME, "--password-stdin", DOCKER_REGISTRY], {
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+
+    let loginOutput = "";
+    let loginError = "";
+    let loginTimeout: NodeJS.Timeout;
+
+    login.stdin.write(DOCKER_PASSWORD);
+    login.stdin.end();
+
+    login.stdout.on("data", (data: any) => {
+      loginOutput += data.toString();
+      console.log(`Docker login stdout: ${data}`);
+    });
+
+    login.stderr.on("data", (data: any) => {
+      loginError += data.toString();
+      console.error(`Docker login stderr: ${data}`);
+    });
+
+    login.on("error", (error: any) => {
+      console.error(`Docker login process error:`, error);
+      clearTimeout(loginTimeout);
+      reject(error);
+    });
+
+    login.on("close", (code: any) => {
+      clearTimeout(loginTimeout);
+      if (code !== 0) {
+        console.error(`Docker login failed with code ${code}. Error: ${loginError}`);
+        console.warn("Login failed, attempting build/push with environment variables. Ensure credentials are valid.");
+      } else {
+        console.log("Docker login successful");
+      }
+
+      // Docker build
+      console.log(`Building Docker image ${imageName}...`);
+      const build = spawn("docker", ["build", "-t", imageName, "."], { cwd: projectPath });
+
+      let buildOutput = "";
+      let buildError = "";
+
+      build.stdout.on("data", (data: any) => {
+        buildOutput += data.toString();
+        console.log(`Docker build stdout: ${data}`);
       });
-  
-      let loginOutput = "";
-      let loginError = "";
-      let loginTimeout: NodeJS.Timeout;
-  
-      login.stdin.write(DOCKER_PASSWORD);
-      login.stdin.end();
-  
-      login.stdout.on("data", (data: any) => {
-        loginOutput += data.toString();
-        console.log(`Docker login stdout: ${data}`);
+
+      build.stderr.on("data", (data: any) => {
+        buildError += data.toString();
+        console.error(`Docker build stderr: ${data}`);
       });
-  
-      login.stderr.on("data", (data: any) => {
-        loginError += data.toString();
-        console.error(`Docker login stderr: ${data}`);
-      });
-  
-      login.on("error", (error: any) => {
-        console.error(`Docker login process error:`, error);
-        clearTimeout(loginTimeout);
+
+      build.on("error", (error: any) => {
+        console.error(`Docker build process error:`, error);
         reject(error);
       });
-  
-      login.on("close", (code: any) => {
-        clearTimeout(loginTimeout);
+
+      build.on("close", (code: any) => {
         if (code !== 0) {
-          console.error(`Docker login failed with code ${code}. Error: ${loginError}`);
-          // Fallback: Proceed without login if it fails due to timeout or credential store
-          console.warn("Login failed, attempting build/push with environment variables. Ensure credentials are valid.");
-        } else {
-          console.log("Docker login successful");
+          console.error(`Docker build failed with code ${code}. Error: ${buildError}`);
+          reject(new Error(`Docker build failed with code ${code}`));
+          return;
         }
-  
-        // Docker build
-        console.log(`Building Docker image ${imageName}...`);
-        const build = spawn("docker", ["build", "-t", imageName, "."], { cwd: projectPath });
-  
-        let buildOutput = "";
-        let buildError = "";
-  
-        build.stdout.on("data", (data: any) => {
-          buildOutput += data.toString();
-          console.log(`Docker build stdout: ${data}`);
+        console.log(`Docker image ${imageName} built successfully`);
+
+        // Docker push with environment variables for authentication
+        console.log(`Pushing Docker image ${imageName} to registry...`);
+        const push = spawn("docker", ["push", imageName], {
+          env: {
+            ...process.env,
+            DOCKER_USERNAME,
+            DOCKER_PASSWORD,
+          },
         });
-  
-        build.stderr.on("data", (data: any) => {
-          buildError += data.toString();
-          console.error(`Docker build stderr: ${data}`);
+
+        let pushOutput = "";
+        let pushError = "";
+
+        push.stdout.on("data", (data: any) => {
+          pushOutput += data.toString();
+          console.log(`Docker push stdout: ${data}`);
         });
-  
-        build.on("error", (error: any) => {
-          console.error(`Docker build process error:`, error);
+
+        push.stderr.on("data", (data: any) => {
+          pushError += data.toString();
+          console.error(`Docker push stderr: ${data}`);
+        });
+
+        push.on("error", (error: any) => {
+          console.error(`Docker push process error:`, error);
           reject(error);
         });
-  
-        build.on("close", (code: any) => {
+
+        push.on("close", (code: any) => {
           if (code !== 0) {
-            console.error(`Docker build failed with code ${code}. Error: ${buildError}`);
-            reject(new Error(`Docker build failed with code ${code}`));
+            console.error(`Docker push failed with code ${code}. Error: ${pushError}`);
+            reject(new Error(`Docker push failed with code ${code}`));
             return;
           }
-          console.log(`Docker image ${imageName} built successfully`);
-  
-          // Docker push with environment variables for authentication
-          console.log(`Pushing Docker image ${imageName} to registry...`);
-          const push = spawn("docker", ["push", imageName], {
-            env: {
-              ...process.env,
-              DOCKER_USERNAME,
-              DOCKER_PASSWORD,
-            },
-          });
-  
-          let pushOutput = "";
-          let pushError = "";
-  
-          push.stdout.on("data", (data: any) => {
-            pushOutput += data.toString();
-            console.log(`Docker push stdout: ${data}`);
-          });
-  
-          push.stderr.on("data", (data: any) => {
-            pushError += data.toString();
-            console.error(`Docker push stderr: ${data}`);
-          });
-  
-          push.on("error", (error: any) => {
-            console.error(`Docker push process error:`, error);
-            reject(error);
-          });
-  
-          push.on("close", (code: any) => {
-            if (code !== 0) {
-              console.error(`Docker push failed with code ${code}. Error: ${pushError}`);
-              reject(new Error(`Docker push failed with code ${code}`));
-              return;
-            }
-            console.log(`Docker image ${imageName} pushed to registry`);
-            resolve("");
-          });
+          console.log(`Docker image ${imageName} pushed to registry`);
+          resolve("");
         });
       });
-  
-      // Increased timeout to 60 seconds
-      loginTimeout = setTimeout(() => {
-        if (!login.killed) {
-          login.kill("SIGTERM");
-          console.error("Docker login timed out after 60 seconds. Error: No response from Docker registry.");
-          // Fallback: Proceed without login
-          console.warn("Login timed out, attempting build/push with environment variables.");
-        }
-      }, 60000); // 60-second timeout
     });
-  }
+
+    loginTimeout = setTimeout(() => {
+      if (!login.killed) {
+        login.kill("SIGTERM");
+        console.error("Docker login timed out after 60 seconds. Error: No response from Docker registry.");
+        console.warn("Login timed out, attempting build/push with environment variables.");
+      }
+    }, 60000); // 60-second timeout
+  });
+}
 async function main() {
   console.log("Deploy-service main loop started");
   let response: any;
