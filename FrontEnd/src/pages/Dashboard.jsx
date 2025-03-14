@@ -482,14 +482,14 @@ const Dashboard = () => {
                           animate={{ opacity: 0 }}
                           whileHover={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.2 }}
-                          className="absolute right-0 top-8 bg-gray-800/90 backdrop-blur-md border border-gray-700 rounded-xl shadow-lg p-2 space-y-2 hidden group-hover:block dark:bg-gray-800/90 dark:border-gray-700"
+                          className="absolute right-0 top-8 bg-gray-800/90 backdrop-blur-md border border-gray-700 rounded-xl shadow-lg p-2 space-y-2 hidden group-hover:block dark:bg-gray-800/90 dark:border-gray-700 z-40"
                         >
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               addToast(`Redeployed ${project.name}`);
                             }}
-                            className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white rounded-lg w-full text-left transition-all dark:text-gray-300 dark:hover:bg-gray-700/50 dark:hover:text-white"
+                            className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white rounded-lg w-full text-left transition-all dark:text-gray-300 dark:hover:bg-gray-700/50 dark:hover:text-white z-30"
                           >
                             <RefreshCw className="h-4 w-4" />
                             <span>Redeploy</span>
@@ -499,7 +499,7 @@ const Dashboard = () => {
                               e.stopPropagation();
                               navigate(`/project/${project.id}/logs`);
                             }}
-                            className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white rounded-lg w-full text-left transition-all dark:text-gray-300 dark:hover:bg-gray-700/50 dark:hover:text-white"
+                            className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white rounded-lg w-full text-left transition-all dark:text-gray-300 dark:hover:bg-gray-700/50 dark:hover:text-white z-30"
                           >
                             <FileText className="h-4 w-4" />
                             <span>View Logs</span>
@@ -511,7 +511,7 @@ const Dashboard = () => {
                               setVisibleProjects((prev) => prev.filter((p) => p.id !== project.id));
                               addToast(`Deleted ${project.name}`);
                             }}
-                            className="flex items-center space-x-2 px-4 py-2 text-sm text-red-400 hover:bg-gray-700/50 hover:text-red-300 rounded-lg w-full text-left transition-all dark:text-red-400 dark:hover:bg-gray-700/50 dark:hover:text-red-300"
+                            className="flex items-center space-x-2 px-4 py-2 text-sm text-red-400 hover:bg-gray-700/50 hover:text-red-300 rounded-lg w-full text-left transition-all dark:text-red-400 dark:hover:bg-gray-700/50 dark:hover:text-red-300 z-30"
                           >
                             <Trash2 className="h-4 w-4" />
                             <span>Delete</span>
@@ -523,7 +523,7 @@ const Dashboard = () => {
                   <div>
                     <p className="text-gray-500 text-sm dark:text-gray-500">{project.latest}</p>
                   </div>
-                  <motion.div
+                  {/* <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     whileHover={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2 }}
@@ -531,7 +531,7 @@ const Dashboard = () => {
                   >
                     <p className="text-gray-400 text-sm dark:text-gray-400">Last Deployed: {project.lastDeployed}</p>
                     <p className="text-gray-400 text-sm dark:text-gray-400">Team: {project.team}</p>
-                  </motion.div>
+                  </motion.div> */}
                 </motion.div>
               ))
             ) : (

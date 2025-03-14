@@ -1,0 +1,41 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Project {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String
+  userEmail   String
+  userName    String?
+  name        String
+  repoUrl     String
+  status      String    @default("uploaded")
+  lastDeployed DateTime?
+  domain      String?
+  envVars     Json[]
+  s3Files     Json[]
+  framework   String    @default("Unknown")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  logs        Log[]     @relation("ProjectLogs")
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Log {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  projectId String    @db.ObjectId
+  userId    String
+  status    String
+  message   String
+  timestamp DateTime  @default(now())
+  project   Project   @relation("ProjectLogs", fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
