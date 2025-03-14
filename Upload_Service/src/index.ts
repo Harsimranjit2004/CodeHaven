@@ -20,7 +20,10 @@ const publisher = createClient({
 publisher.connect();
 
 const app = express();
-app.use(cors());
+app.use(
+  cors()
+);
+
 app.use(express.json());
 
 // Deploy endpoint (existing)
