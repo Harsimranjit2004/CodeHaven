@@ -320,6 +320,46 @@ app.post("/update-status", async (req:any, res:any) => {
     res.status(500).json({ error: "Failed to update status" });
   }
 });
+// Add this endpoint to upload-service.js
+app.get("/projects", async (req:any, res:any) => {
+  const { userId } = req.query;
+
+  if (!userId || typeof userId !== "string") {
+    return res.status(400).json({ error: "User ID is required" });
+  }
+
+  try {
+    const projects = await prisma.project.findMany({
+      where: { userId },
+      orderBy: { lastDeployed: "desc" },
+    });
+    res.json(projects);
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    res.status(500).json({ error: "Failed to fetch projects" });
+  }
+});
+
+// Optional: Add a delete endpoint for the frontend delete action
+app.delete("/project/:id", async (req:any, res:any) => {
+  const { id } = req.params;
+  const { userId } = req.query;
+
+  try {
+    const project = await prisma.project.findUnique({ where: { id } });
+    if (!project || project.userId !== userId) {
+      return res.status(404).json({ error: "Project not found or unauthorized" });
+    }
+
+    await prisma.project.delete({ where: { id } });
+    await publisher.hDel("status", id); // Clean up Redis status
+    io.to(id).emit("status-update", { projectId: id, status: "deleted", message: "Project deleted" });
+    res.json({ message: "Project deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting project:", error);
+    res.status(500).json({ error: "Failed to delete project" });
+  }
+});
 // Start the backend server with WebSocket
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
