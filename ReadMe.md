@@ -3,6 +3,9 @@
 **CodeHaven** is a custom-built deployment platform inspired by Vercel, engineered to streamline web app hosting. It automates the process from cloning and building a Git repository to serving the live application—all within a robust, scalable architecture. Initially designed for static frameworks like React and Vite, CodeHaven is extensible to dynamic setups (e.g., Express, Next.js), showcasing expertise in distributed systems, containerization, and real-time communication.
 
 ---
+<img width="1710" alt="image" src="https://github.com/user-attachments/assets/5c7f6ebd-fa58-4a1e-b4a5-3ee895993341" />
+<img width="1709" alt="image" src="https://github.com/user-attachments/assets/8ec8d10a-621c-4e71-a869-f74c3b9315d9" />
+
 
 ## **Highlights**
 
