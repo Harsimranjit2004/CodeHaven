@@ -30,6 +30,8 @@
   - Cloudflare R2
 
 ---
+![Untitled-2025-03-14-1422](https://github.com/user-attachments/assets/de59cb2f-3860-4e5c-b600-b2d1fae34825)
+
 
 ## **Technology Stack**
 
