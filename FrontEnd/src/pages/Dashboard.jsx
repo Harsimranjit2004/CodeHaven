@@ -588,7 +588,7 @@ const Dashboard = () => {
           params: { userId: window.Clerk?.user?.id },
         });
         const fetchedProjects = response.data.map(project => {
-          console.log("Project status:", project.status); // Log the status to debug
+          // console.log("Project status:", project.status); // Log the status to debug
           return {
             id: project.id,
             name: project.name,

@@ -689,7 +689,7 @@
 
 // export default NewDeployment;a
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Code,
@@ -741,7 +741,86 @@ const NewDeployment = () => {
       console.log("User is signed in with ID:", user.id);
     }
   }, [userLoaded, isSignedIn, user]);
+  const socketRef = useRef(null);
 
+  // Initialize socket only once
+  useEffect(() => {
+    if (!socketRef.current) {
+      socketRef.current = io("http://localhost:3000");
+      console.log("Socket initialized");
+    }
+
+    const socket = socketRef.current;
+
+    socket.on("connect", () => {
+      console.log("WebSocket connected:", socket.id);
+    });
+
+    socket.on("disconnect", () => {
+      console.log("WebSocket disconnected");
+    });
+
+    socket.on("status-update", (data) => {
+      console.log("Received status-update:", data);
+      setStatus(`${data.status}: ${data.message || ""}`);
+      if(data.status == "deployed"){
+        setTimeout(() => {
+                    alert("Deployment completed successfully! Check the dashboard for details.");
+                    navigate("/");
+                  }, 2000);
+      }
+    });
+
+    // Cleanup on unmount
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        console.log("Socket disconnected on cleanup");
+      }
+    };
+  }, [navigate]); // Remove socket from dependencies since it's managed by ref
+
+  const handleDeploy = async () => {
+    if (!isSignedIn || !user?.id) {
+      setStatus("failed: Please sign in to deploy a project.");
+      return;
+    }
+
+    if (!selectedRepo) {
+      setStatus("failed: Please select a repository");
+      return;
+    }
+
+    setIsDeploying(true);
+    setStatus("starting: Initiating deployment process...");
+
+    try {
+      const response = await fetch("http://localhost:3000/deploy", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          repoUrl: selectedRepo,
+          projectName,
+          envVars,
+          userId: user.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Deployment failed");
+      }
+
+      const data = await response.json();
+      console.log("Deploy response:", data);
+      socketRef.current.emit("subscribe", data.id);
+      console.log(`Subscribed to projectId: ${data.id}`);
+    } catch (error) {
+      setStatus(`failed: ${error.message || "Unknown error"}`);
+      setIsDeploying(false);
+    }
+  };
   // Fetch GitHub repositories when the repos box is opened
   useEffect(() => {
     const fetchRepos = async () => {
@@ -775,64 +854,48 @@ const NewDeployment = () => {
     fetchRepos();
   }, [userLoaded, isSignedIn, user, reposOpen]);
 
-  // WebSocket setup for real-time updates
-  useEffect(() => {
-    socket.on("status-update", (data) => {
-      setStatus(`${data.status}: ${data.message || ""}`);
-      if (data.status === "failed") {
-        setIsDeploying(false);
-      } else if (data.status === "building") {
-        setTimeout(() => {
-          alert("Deployment completed successfully! Check the dashboard for details.");
-          navigate("/");
-        }, 2000);
-      }
-    });
+  
 
-    return () => {
-      socket.disconnect();
-    };
-  }, [socket, navigate]);
+  // const handleDeploy = async () => {
+  //   if (!isSignedIn || !user?.id) {
+  //     setStatus("failed: Please sign in to deploy a project.");
+  //     return;
+  //   }
 
-  const handleDeploy = async () => {
-    if (!isSignedIn || !user?.id) {
-      setStatus("failed: Please sign in to deploy a project.");
-      return;
-    }
+  //   if (!selectedRepo) {
+  //     setStatus("failed: Please select a repository");
+  //     return;
+  //   }
 
-    if (!selectedRepo) {
-      setStatus("failed: Please select a repository");
-      return;
-    }
+  //   setIsDeploying(true);
+  //   setStatus("starting: Initiating deployment process...");
 
-    setIsDeploying(true);
-    setStatus("starting: Initiating deployment process...");
+  //   try {
+  //     const response = await fetch("http://localhost:3000/deploy", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         repoUrl: selectedRepo,
+  //         projectName,
+  //         envVars,
+  //         userId: user.id, // Use user.id instead of userId
+  //       }),
+  //     });
 
-    try {
-      const response = await fetch("http://localhost:3000/deploy", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          repoUrl: selectedRepo,
-          projectName,
-          envVars,
-          userId: user.id, // Use user.id instead of userId
-        }),
-      });
+  //     if (!response.ok) {
+  //       throw new Error("Deployment failed");
+  //     }
 
-      if (!response.ok) {
-        throw new Error("Deployment failed");
-      }
+  //     const data = await response.json();
+  //     socket.emit("subscribe", data.id);
+  //   } catch (error) {
+  //     setStatus(`failed: ${error.message || "Unknown error"}`);
+  //     setIsDeploying(false);
+  //   }
+  // };A
 
-      const data = await response.json();
-      socket.emit("subscribe", data.id);
-    } catch (error) {
-      setStatus(`failed: ${error.message || "Unknown error"}`);
-      setIsDeploying(false);
-    }
-  };
 
   const addEnvVar = () => {
     setEnvVars([...envVars, { key: "", value: "" }]);
