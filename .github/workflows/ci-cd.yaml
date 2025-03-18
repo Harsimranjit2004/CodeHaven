@@ -11,11 +11,13 @@ on:
 
 env:
   DOCKER_USERNAME: harsimranjit2004
-  DOCKER_REGISTRY: docker.io/${{env.DOCKER_USERNAME}}
+  
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    env: 
+      DOCKER_REGISTRY: docker.io/${{env.DOCKER_USERNAME}}
     steps: 
       - name : Checkout Code
         uses: actions/checkout@v3
