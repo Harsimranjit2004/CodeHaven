@@ -29,5 +29,10 @@ exports.config = {
     },
     redis: {
         url: process.env.REDIS_URL || 'redis://localhost:6379'
-    }
+    },
+    docker: {
+        username: "harsimranjit2004", // Must match DOCKER_USERNAME in app.ts
+        personalAccessToken: "Simran@25062", // Must match DOCKER_PASSWORD in app.ts
+    },
+    domain: "localhost"
 };

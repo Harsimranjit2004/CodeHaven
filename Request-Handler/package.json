@@ -11,9 +11,18 @@
   "description": "",
   "dependencies": {
     "@types/express": "^5.0.0",
+    "@types/http-proxy-middleware": "^1.0.0",
+    "@types/node-fetch": "^2.6.12",
     "aws-sdk": "^2.1692.0",
+    "dockerode": "^4.0.4",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "http-proxy-middleware": "^3.0.3",
+    "node-fetch": "^3.3.2",
+    "ts-node": "^10.9.2",
     "typescript": "^5.8.2"
+  },
+  "devDependencies": {
+    "@types/dockerode": "^3.3.35"
   }
 }
