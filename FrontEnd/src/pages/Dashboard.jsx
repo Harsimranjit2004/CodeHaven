@@ -577,7 +577,7 @@ const Dashboard = () => {
   const [toasts, setToasts] = useState([]);
   const socket = useRef(null);
 
-  const BACKEND_URL = "http://localhost:3000";
+  const BACKEND_URL = import.meta.env.BACKEND_URL
 
   // Fetch projects from MongoDB via backend
   useEffect(() => {
@@ -648,7 +648,6 @@ const Dashboard = () => {
   const filteredProjects = projects.filter(
     (project) =>
       (filterStatus === "all" || project.status === filterStatus) &&
-      (filterFramework === "All" || project.framework === filterFramework) &&
       (project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         project.domain.toLowerCase().includes(searchQuery.toLowerCase()))
   );
@@ -904,7 +903,7 @@ const Dashboard = () => {
                 {status.replace("dev contact", "Dev Contact")} {/* Display with proper capitalization */}
               </motion.button>
             ))}
-            {["All", "Next.js", "React", "Node.js", "Vanilla JS", "Unknown"].map((framework) => (
+            {/* {["All", "Next.js", "React", "Node.js", "Vanilla JS", "Unknown"].map((framework) => (
               <motion.button
                 key={framework}
                 whileHover={{ scale: 1.05, y: -2 }}
@@ -920,7 +919,7 @@ const Dashboard = () => {
               >
                 {framework}
               </motion.button>
-            ))}
+            ))} */}
             {(filterStatus !== "all" || filterFramework !== "All") && (
               <motion.button
                 whileHover={{ scale: 1.05, y: -2 }}

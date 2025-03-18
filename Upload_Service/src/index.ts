@@ -41,7 +41,7 @@ publisher.connect().catch((err) => console.error("Redis publisher connection err
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: "*" },
+  cors: { origin: config.cors.origin },
 });
 
 io.on("connection", (socket) => {
@@ -52,7 +52,7 @@ io.on("connection", (socket) => {
   });
 });
 
-app.use(cors({ origin: "*" }));
+app.use(cors({ origin: config.cors.origin }));
 app.use(express.json());
 
 // Helper function to get OAuth access token

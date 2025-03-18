@@ -720,7 +720,7 @@ const NewDeployment = () => {
   const [repos, setRepos] = useState([]);
   const [selectedRepo, setSelectedRepo] = useState("");
 
-  const socket = io("http://localhost:3000");
+
 
   // Debug the user state
   useEffect(() => {
@@ -746,7 +746,7 @@ const NewDeployment = () => {
   // Initialize socket only once
   useEffect(() => {
     if (!socketRef.current) {
-      socketRef.current = io("http://localhost:3000");
+      socketRef.current = io(import.meta.env.BACKEND_URL);
       console.log("Socket initialized");
     }
 

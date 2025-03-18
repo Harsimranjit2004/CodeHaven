@@ -5,14 +5,15 @@ import { buildProject, detectFramework } from "./utils";
 import axios from "axios";
 import path from "path";
 import fs from "fs/promises";
+import { config } from "./config";
 require("dotenv").config();
 
 console.log("Starting deploy-service...");
 
 // Configuration
-const DOCKER_REGISTRY = process.env.DOCKER_REGISTRY || "docker.io";
-const DOCKER_USERNAME = process.env.DOCKER_USERNAME || "harsimranjit2004";
-const DOCKER_PASSWORD = process.env.DOCKER_PASSWORD || "Simran@25062";
+const DOCKER_REGISTRY = config.docker.registry
+const DOCKER_USERNAME = config.docker.username
+const DOCKER_PASSWORD = config.docker.password
 
 if (!DOCKER_USERNAME || !DOCKER_PASSWORD) {
   console.error("DOCKER_USERNAME and DOCKER_PASSWORD must be set in .env");
@@ -20,8 +21,8 @@ if (!DOCKER_USERNAME || !DOCKER_PASSWORD) {
 }
 
 // Redis clients
-const subscriber = createClient({ url: process.env.REDIS_URL || "redis://localhost:6379" });
-const publisher = createClient({ url: process.env.REDIS_URL || "redis://localhost:6379" });
+const subscriber = createClient({ url: config.redis.url });
+const publisher = createClient({ url: config.redis.url });
 
 async function connectRedisClients() {
   try {
@@ -38,7 +39,7 @@ connectRedisClients();
 // Update deployment status
 async function updateStatus(projectId: any, status: any, message: any, userId: any = "") {
   try {
-    await axios.post("http://localhost:3000/update-status", { projectId, status, message, userId });
+    await axios.post(`${config.upload_backend.url}/update-status`, { projectId, status, message, userId });
     console.log(`Status updated for project ${projectId} to ${status}`);
   } catch (error: any) {
     console.error(`Failed to update status for project ${projectId}: ${error.message}`);
