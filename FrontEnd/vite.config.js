@@ -10,6 +10,10 @@ export default defineConfig({
     allowedHosts: true
     // You can also allow all hosts by setting allowedHosts: true,
     // but it's more secure to specify the allowed hosts explicitly.
-  }
+  },
+  build: {
+    // Ensure build doesn't rely on browser APIs
+    ssr: false,
+  },
   
 })
